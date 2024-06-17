@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
 import Userverification from "../models/userVerification.js";
+import Vehicle from "../models/VehicleModel.js";
 
 const sendOTPVerificationEmail = async ({ _id, email }) => {
   const transporter = nodemailer.createTransport({
@@ -67,7 +68,7 @@ const sendOTPVerificationEmail = async ({ _id, email }) => {
 const authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).populate("vehicles");
 
   if (user && (await user.matchPassword(password))) {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
@@ -87,6 +88,9 @@ const authUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      vehicles: user.vehicles,
+      isAdmin: user.isAdmin,
+      location: user.location,
     });
   } else {
     if (user && !user.verified) {
@@ -103,7 +107,7 @@ const authUser = asyncHandler(async (req, res) => {
 // @route POST /api/users
 // @access Public
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, phone } = req.body;
+  const { name, email, password, phone, vin } = req.body;
 
   // Check if user exists
   const userExists = await User.findOne({ email: email });
@@ -113,11 +117,19 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error("User already exists");
   }
 
+  const vehicle = await Vehicle.findOne({ vin });
+
+  if (!vehicle) {
+    res.status(400);
+    throw new Error("The VIN input is invalid");
+  }
+
   const user = await User.create({
     name,
     email,
     password,
     phone,
+    vehicles: [{ vin }],
   });
 
   if (user) {
@@ -128,6 +140,7 @@ const registerUser = asyncHandler(async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        vehicles: user.vehicles,
       });
     } else {
       res.status(500).json({
@@ -312,28 +325,127 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 // @route GET /api/users
 // @access Private/Admin
 const getUsers = asyncHandler(async (req, res) => {
-  res.send("get users");
+  const users = await User.find({
+    isAdmin: { $ne: true },
+    isMechanic: { $ne: true },
+  });
+  res.status(200).json(users);
 });
 
 // @desc Delete user
 // @route DELETE /api/users/:id
 // @access Private/Admin
 const deleteUser = asyncHandler(async (req, res) => {
-  res.send("get users");
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (user) {
+      await User.deleteOne({ _id: req.params.id }); // Use deleteOne instead of remove
+      res.status(200).json({ message: "User removed" });
+    } else {
+      res.status(404);
+      throw new Error("User not found");
+    }
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // @desc Get user by ID
-// @route GET /api/users/:id
+// @route GET /api/:username
 // @access Private/Admin
-const getUserByID = asyncHandler(async (req, res) => {
-  res.send("get user by id");
+const getUserByName = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+  const users = await User.find({ name: { $regex: username, $options: "i" } });
+
+  if (users.length > 0) {
+    res.status(200).json(users);
+  } else {
+    res.status(404).json({ message: "User not found" });
+  }
 });
 
 // @desc Update user
 // @route PUT /api/users/:id
-// @access Private/Admin
+// @access Private
 const updateUser = asyncHandler(async (req, res) => {
-  res.send("update user");
+  const user = await User.findById(req.params.id);
+
+  if (user) {
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+    if (req.body.password) {
+      user.password = req.body.password;
+    }
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      vehicles: updatedUser.vehicles,
+      phone: updatedUser.phone,
+      isAdmin: updatedUser.isAdmin,
+      location: updatedUser.location,
+    });
+  } else {
+    res.status(404);
+    throw new Error("User not found");
+  }
+});
+
+// @desc Register mechanic
+// @route POST /api/users/mechanics
+// @access Public
+const addMechanic = asyncHandler(async (req, res) => {
+  const { name, email, password, phone } = req.body;
+
+  // Check if user exists
+  const userExists = await User.findOne({ email });
+
+  if (userExists) {
+    res.status(400);
+    throw new Error("User already exists");
+  }
+
+  const user = await User.create({
+    name,
+    email,
+    password,
+    phone,
+    isMechanic: true,
+  });
+
+  if (user) {
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      isMechanic: user.isMechanic,
+    });
+  } else {
+    res.status(400).json({ message: "Invalid user data" });
+  }
+});
+
+// @desc Get mechanics
+// @route GET /api/users/mecha
+// @access Private/Admin
+const getMechanics = asyncHandler(async (req, res) => {
+  try {
+    const mechanics = await User.find({ isMechanic: true });
+
+    if (mechanics.length === 0) {
+      return res.status(404).json({ message: "No mechanics found" });
+    }
+
+    res.status(200).json(mechanics);
+  } catch (error) {
+    res.status(500).json({ message: "Error getting mechanics" });
+  }
 });
 
 export {
@@ -343,10 +455,12 @@ export {
   getUserProfile,
   updateUserProfile,
   getUsers,
-  getUserByID,
+  getUserByName,
   deleteUser,
   updateUser,
   verifyUser,
   sendRecoveryEmailUser,
   updatePasswordUser,
+  addMechanic,
+  getMechanics,
 };

@@ -3,6 +3,8 @@ import users from "./data/users.js";
 import colors from "colors";
 import User from "./models/userModel.js";
 import connectDB from "./config/db.js";
+import Vehicle from "./models/VehicleModel.js";
+import vehicles from "./data/vehicle.js";
 
 dotenv.config();
 
@@ -12,6 +14,9 @@ const importData = async () => {
   try {
     await User.deleteMany();
     await User.insertMany(users);
+
+    await Vehicle.deleteMany();
+    await Vehicle.insertMany(vehicles);
 
     console.log("Data Imported".green.inverse);
     process.exit();
@@ -24,6 +29,7 @@ const importData = async () => {
 const destroyData = async () => {
   try {
     await User.deleteMany();
+    await Vehicle.deleteMany();
 
     console.log("Data Destroyed!".red.inverse);
     process.exit();

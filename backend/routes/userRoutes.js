@@ -7,12 +7,14 @@ import {
   getUserProfile,
   updateUserProfile,
   getUsers,
-  getUserByID,
+  getUserByName,
   deleteUser,
   updateUser,
   verifyUser,
   sendRecoveryEmailUser,
   updatePasswordUser,
+  getMechanics,
+  addMechanic,
 } from "../controllers/userController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 import path from "path";
@@ -27,10 +29,14 @@ userRoutes
 userRoutes
   .route("/:id")
   .delete(protect, admin, deleteUser)
-  .get(protect, getUserByID)
-  .put(protect, admin, updateUser);
+  .put(protect, updateUser);
+userRoutes
+  .route("/mecha")
+  .get(protect, admin, getMechanics)
+  .post(protect, admin, addMechanic);
 userRoutes.post("/verify", verifyUser);
 userRoutes.post("/sendMail", sendRecoveryEmailUser);
 userRoutes.post("/updatepw", updatePasswordUser);
+userRoutes.route("/:username").get(protect, admin, getUserByName);
 
 export default userRoutes;

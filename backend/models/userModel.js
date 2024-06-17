@@ -3,8 +3,9 @@ import bcrypt from "bcryptjs";
 
 const vehicleSchema = mongoose.Schema({
   vin: {
-    type: Number,
+    type: String,
     required: true,
+    ref: "Vehicle",
   },
 });
 
@@ -31,6 +32,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
       default: false,
+    },
+    isMechanic: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    location: {
+      type: String,
+      default: "",
     },
     verified: {
       type: Boolean,
