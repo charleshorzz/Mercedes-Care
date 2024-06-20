@@ -231,6 +231,7 @@ const updateAppointmentIsPaid = asyncHandler(async (req, res) => {
 
   res.json({ appointment, history });
 });
+
 // @desc    Assign mechanic to an appointment
 // @route   PATCH /api/appointments/:id/assign
 // @access  Private

@@ -90,6 +90,7 @@ const authUser = asyncHandler(async (req, res) => {
       phone: user.phone,
       vehicles: user.vehicles,
       isAdmin: user.isAdmin,
+      isMechanic: user.isMechanic,
       location: user.location,
     });
   } else {
@@ -416,6 +417,7 @@ const addMechanic = asyncHandler(async (req, res) => {
     password,
     phone,
     isMechanic: true,
+    location: "BR Jaya SDN BHD",
   });
 
   if (user) {
@@ -425,6 +427,7 @@ const addMechanic = asyncHandler(async (req, res) => {
       email: user.email,
       phone: user.phone,
       isMechanic: user.isMechanic,
+      location: user.location,
     });
   } else {
     res.status(400).json({ message: "Invalid user data" });
