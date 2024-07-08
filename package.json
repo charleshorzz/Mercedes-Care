@@ -11,7 +11,7 @@
     "dev": "concurrently \"npm run server\" \"npm run client\" ",
     "data:import": "node backend/seeder.js",
     "data-destroy": "node backend/seeder.js -d",
-    "build": "npm install && npm install --prefix react-tailwind-sidebar && npm run build --prefix react-tailwind-sidebar"
+    "build": "NPM_CONFIG_PRODUCTION=false npm install && npm install --prefix react-tailwind-sidebar && npm run build --prefix react-tailwind-sidebar"
   },
   "author": "",
   "license": "ISC",
