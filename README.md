@@ -1,1 +1,1 @@
-Backend folder for school fyp, a car maintenance system for Mercedes Benz built on MERN
+Mercedes Benz Car Maintenance System build with MERN Stack
