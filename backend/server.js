@@ -31,15 +31,25 @@ app.use(express.urlencoded({ extended: true }));
 // Cookie parser, allow us to access cookie, jwt
 app.use(cookieParser());
 
-app.get("/", (req, res) => {
-  res.send("API running");
-});
-
 app.use("/api/users", userRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/appointment", appointmentRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/history", historyRoutes);
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "react-tailwind-sidebar/dist")));
+
+  app.get("*", (req, res) =>
+    res.sendFile(
+      path.resolve(__dirname, "react-tailwind-sidebar", "dist", "index.html")
+    )
+  );
+} else {
+  app.get("/", (req, res) => {
+    res.send("API running");
+  });
+}
 
 app.use(notFound);
 app.use(errorHandler);
